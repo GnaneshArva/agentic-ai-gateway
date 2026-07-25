@@ -1,0 +1,2536 @@
+Excellent. This repository sits at the front door of the entire AI platform.
+
+# agentic-ai-gateway
+
+## Part 1 — Foundation & Enterprise Architecture
+
+---
+
+# Application Name
+
+```text
+agentic-ai-gateway
+```
+
+---
+
+# Objective
+
+Build an **Enterprise-grade AI Gateway** using **Python 3.12+**.
+
+The AI Gateway acts as the **single entry point** for all AI applications across the enterprise. It centralizes AI-specific request processing, routing, governance, and resiliency before forwarding requests to downstream AI services.
+
+Unlike a traditional API Gateway, this gateway understands AI workloads, models, token usage, streaming responses, and AI governance.
+
+---
+
+# Technology Stack
+
+Use exactly:
+
+* Python 3.12+
+* FastAPI
+* Pydantic v2
+* asyncio
+* httpx
+* uv package manager
+
+Do NOT include:
+
+* Docker
+* Kubernetes
+* Cloud deployment
+* Authentication providers
+* Databases
+
+Use in-memory configuration where persistence is not required.
+
+---
+
+# Enterprise Architecture Principles
+
+Implement using:
+
+* Clean Architecture
+* SOLID Principles
+* Strategy Pattern
+* Factory Pattern
+* Chain of Responsibility Pattern
+* Dependency Injection
+* Async Programming
+
+Every gateway policy must be independently replaceable.
+
+---
+
+# Purpose of this Repository
+
+The gateway is responsible for:
+
+* AI request validation
+* Request routing
+* Provider abstraction
+* Model routing
+* Rate limiting
+* Token quota enforcement
+* Cost budget enforcement
+* Circuit breaking
+* Retry policies
+* Correlation ID generation
+* Request enrichment
+* Response enrichment
+* Streaming proxy
+* AI policy enforcement
+* Observability integration
+
+The gateway must **NOT** implement:
+
+* AI agents
+* Prompt generation
+* Memory
+* RAG
+* Tool execution
+* Business logic
+* MCP servers
+
+It is an orchestration and governance layer only.
+
+---
+
+# Enterprise Platform Integration
+
+The gateway integrates with:
+
+```text
+travel-agent-service
+```
+
+Routes validated AI requests.
+
+---
+
+```text
+agentic-ai-observability
+```
+
+Publishes gateway telemetry.
+
+---
+
+```text
+agentic-ai-guardrails
+```
+
+Executes gateway-level validation policies.
+
+---
+
+Future integrations should support:
+
+* Multiple AI agent services
+* Multiple model providers
+* Multiple business domains
+
+---
+
+# High-Level Architecture
+
+```text
+Client
+
+↓
+
+AI Gateway
+
+↓
+
+Validation
+
+↓
+
+Policy Engine
+
+↓
+
+Router
+
+↓
+
+Travel Agent Service
+
+↓
+
+Response Processing
+
+↓
+
+Client
+```
+
+---
+
+# Runtime Architecture
+
+```text
+HTTP Request
+
+↓
+
+Gateway Controller
+
+↓
+
+Gateway Pipeline
+
+↓
+
+Policies
+
+↓
+
+Router
+
+↓
+
+Downstream AI Service
+
+↓
+
+Response Processor
+
+↓
+
+HTTP Response
+```
+
+---
+
+# Core Components
+
+## Gateway Controller
+
+Responsibilities:
+
+* Receive HTTP requests
+* Validate payloads
+* Start request lifecycle
+* Return responses
+
+---
+
+## Gateway Pipeline
+
+Coordinates request processing.
+
+Responsibilities:
+
+* Validation
+* Policy execution
+* Routing
+* Response handling
+
+---
+
+## Request Validator
+
+Validate:
+
+* Request schema
+* Required headers
+* Payload size
+* Supported operations
+
+Reject malformed requests immediately.
+
+---
+
+## Policy Engine
+
+Executes configurable gateway policies.
+
+Examples:
+
+* Rate limit
+* Token quota
+* Budget
+* Allowed models
+* Allowed providers
+* Streaming policy
+
+Policies execute independently.
+
+---
+
+## Request Router
+
+Routes requests to downstream AI services.
+
+Supports:
+
+* Static routing
+* Rule-based routing
+* Future weighted routing
+
+---
+
+## Response Processor
+
+Responsibilities:
+
+* Normalize responses
+* Attach metadata
+* Preserve streaming responses
+* Add correlation identifiers
+
+---
+
+# Request Lifecycle
+
+```text
+Client
+
+↓
+
+Gateway
+
+↓
+
+Validation
+
+↓
+
+Policies
+
+↓
+
+Routing
+
+↓
+
+Travel Agent Service
+
+↓
+
+Response Processing
+
+↓
+
+Observability
+
+↓
+
+Client
+```
+
+---
+
+# Folder Structure
+
+```text
+agentic-ai-gateway/
+
+│
+├── app/
+├── config/
+├── controllers/
+├── gateway/
+├── pipeline/
+├── routing/
+├── policies/
+├── validators/
+├── services/
+├── integrations/
+├── dto/
+├── interfaces/
+├── factories/
+├── strategies/
+├── middleware/
+├── exceptions/
+├── utils/
+└── main.py
+
+README.md
+
+pyproject.toml
+
+.env.example
+```
+
+---
+
+# Core Runtime Responsibilities
+
+The gateway is responsible for:
+
+* Accepting AI requests
+* Executing gateway policies
+* Selecting downstream destination
+* Forwarding requests
+* Returning normalized responses
+* Publishing telemetry
+
+---
+
+# Runtime Flow
+
+```text
+Client
+
+↓
+
+Gateway
+
+↓
+
+Validation
+
+↓
+
+Policy Engine
+
+↓
+
+Router
+
+↓
+
+Travel Agent Service
+
+↓
+
+Response
+
+↓
+
+Client
+```
+
+---
+
+# Deliverable for Part 1
+
+At the end of Part 1, the **agentic-ai-gateway** repository has a well-defined enterprise architecture with clear responsibilities, integration points, a modular gateway pipeline, and a reusable foundation for AI request governance, routing, and policy enforcement.
+
+# agentic-ai-gateway
+
+# Part 2 — Runtime Processing Pipeline & AI Request Lifecycle
+
+---
+
+# Runtime Philosophy
+
+The AI Gateway should be completely **policy-driven**.
+
+Every AI request should pass through a configurable processing pipeline before reaching any downstream AI service.
+
+```text
+Client
+
+↓
+
+Gateway Controller
+
+↓
+
+Gateway Pipeline
+
+↓
+
+Policies
+
+↓
+
+Router
+
+↓
+
+Downstream AI Service
+
+↓
+
+Response Processing
+
+↓
+
+Client
+```
+
+Each stage should have a single responsibility.
+
+---
+
+# Gateway Pipeline
+
+The Gateway Pipeline coordinates the complete request lifecycle.
+
+Responsibilities:
+
+* Validate request
+* Enrich request
+* Execute policies
+* Select destination
+* Forward request
+* Process response
+* Publish telemetry
+
+---
+
+# Pipeline Flow
+
+```text
+Incoming Request
+
+↓
+
+Validation
+
+↓
+
+Enrichment
+
+↓
+
+Correlation
+
+↓
+
+Policies
+
+↓
+
+Routing
+
+↓
+
+Forward Request
+
+↓
+
+Receive Response
+
+↓
+
+Response Processing
+
+↓
+
+Telemetry
+
+↓
+
+Client
+```
+
+---
+
+# Gateway Context
+
+Every request should create a **GatewayContext**.
+
+It contains:
+
+* Request ID
+* Correlation ID
+* Trace ID
+* Session ID
+* Client Metadata
+* Request Metadata
+* Routing Metadata
+* Policy Results
+* Target Service
+
+This context flows through every component.
+
+---
+
+# Request Validation
+
+Validate:
+
+* JSON schema
+* Mandatory fields
+* Payload size
+* Supported API version
+* Supported operation
+* Required headers
+* Streaming compatibility
+
+Reject invalid requests before policy execution.
+
+---
+
+# Request Enrichment
+
+Automatically enrich requests with:
+
+* Request ID
+* Correlation ID
+* Trace ID
+* Gateway Version
+* Environment
+* Timestamp
+
+Applications should not generate these values themselves.
+
+---
+
+# Correlation Manager
+
+Generate:
+
+```text
+Request ID
+
+↓
+
+Trace ID
+
+↓
+
+Correlation ID
+
+↓
+
+Gateway Context
+```
+
+These identifiers are propagated to every downstream service.
+
+---
+
+# Policy Engine
+
+The Policy Engine evaluates all configured gateway policies.
+
+Policies execute independently.
+
+```text
+Gateway Request
+
+↓
+
+Policy Engine
+
+↓
+
+Policy 1
+
+Policy 2
+
+Policy 3
+
+↓
+
+Routing
+```
+
+Policies should be configurable and replaceable.
+
+---
+
+# Request Size Policy
+
+Validate:
+
+* Maximum payload size
+* Maximum attachment size
+* Maximum conversation history length
+
+Reject oversized requests.
+
+---
+
+# Rate Limiting Policy
+
+Support:
+
+* Per User
+* Per API Key
+* Per Tenant
+* Per Application
+
+Track:
+
+* Current Requests
+* Allowed Requests
+* Remaining Requests
+
+Future storage can be Redis, but use in-memory for now.
+
+---
+
+# Token Quota Policy
+
+Validate estimated token usage.
+
+Track:
+
+* Daily Token Usage
+* Monthly Token Usage
+* Request Token Limit
+
+Reject requests exceeding configured quotas.
+
+---
+
+# Cost Budget Policy
+
+Estimate request cost before execution.
+
+Validate:
+
+* Daily Budget
+* Monthly Budget
+* Request Budget
+
+Reject requests that exceed configured cost limits.
+
+The pricing strategy should be configurable.
+
+---
+
+# Allowed Model Policy
+
+Allow only approved models.
+
+Example:
+
+```text
+gpt-5
+
+gpt-4.1
+
+claude
+
+gemini
+```
+
+Reject unsupported models.
+
+---
+
+# Allowed Provider Policy
+
+Support provider abstraction.
+
+Example providers:
+
+```text
+OpenAI
+
+Anthropic
+
+Google
+
+Azure OpenAI
+```
+
+Providers are selected through configuration, not hardcoded.
+
+---
+
+# Streaming Policy
+
+Validate whether streaming is permitted.
+
+Support:
+
+* Streaming Enabled
+* Streaming Disabled
+* Streaming Required
+
+Forward streaming responses without buffering.
+
+---
+
+# Retry Policy
+
+Retry only retryable failures.
+
+Example flow:
+
+```text
+Request
+
+↓
+
+Failure
+
+↓
+
+Retry
+
+↓
+
+Success
+```
+
+Configurable:
+
+* Maximum Retries
+* Retry Delay
+* Backoff Strategy
+
+---
+
+# Circuit Breaker Policy
+
+Prevent repeated failures from overwhelming downstream services.
+
+States:
+
+```text
+Closed
+
+↓
+
+Open
+
+↓
+
+Half Open
+
+↓
+
+Closed
+```
+
+When the circuit is open:
+
+* Reject requests immediately
+* Return a standard gateway response
+
+---
+
+# Timeout Policy
+
+Support independent timeout configuration for:
+
+* Gateway Processing
+* Downstream Service
+* Streaming Connection
+
+Timeouts should be configurable per route.
+
+---
+
+# Router
+
+The Router selects the downstream destination.
+
+Responsibilities:
+
+* Resolve target service
+* Select endpoint
+* Apply routing strategy
+
+---
+
+# Routing Strategies
+
+Implement interchangeable routing strategies.
+
+Support:
+
+```text
+Static Routing
+
+Rule-Based Routing
+
+Priority Routing
+
+Weighted Routing (Future)
+
+Health-Based Routing (Future)
+```
+
+---
+
+# Downstream Forwarder
+
+The Forwarder communicates with downstream AI services.
+
+Responsibilities:
+
+* Serialize request
+* Forward headers
+* Preserve correlation IDs
+* Handle retries
+* Receive response
+
+---
+
+# Response Processing
+
+Normalize downstream responses.
+
+Responsibilities:
+
+* Preserve response structure
+* Attach gateway metadata
+* Attach correlation IDs
+* Support streaming and non-streaming responses
+
+---
+
+# Response Enrichment
+
+Automatically add:
+
+* Gateway Processing Time
+* Request ID
+* Trace ID
+* Gateway Version
+
+Applications receive consistent metadata.
+
+---
+
+# Error Handling
+
+Normalize all gateway errors.
+
+Categories:
+
+```text
+Validation Error
+
+Policy Violation
+
+Routing Error
+
+Timeout
+
+Circuit Open
+
+Downstream Failure
+
+Unexpected Error
+```
+
+Return consistent error responses regardless of the source.
+
+---
+
+# Gateway Telemetry
+
+Publish telemetry for:
+
+* Request Received
+* Validation Completed
+* Policy Executed
+* Routing Selected
+* Downstream Invoked
+* Response Received
+* Request Completed
+* Request Failed
+
+Integrate with **agentic-ai-observability**.
+
+---
+
+# Parallel Policy Execution
+
+Independent policies should execute concurrently.
+
+Example:
+
+```text
+Gateway Request
+
+↓
+
+Rate Limit
+
+     ||
+
+Token Budget
+
+     ||
+
+Allowed Model
+
+     ||
+
+Allowed Provider
+
+↓
+
+Routing
+```
+
+Use `asyncio.gather()` where policies do not depend on each other.
+
+---
+
+# Failure Isolation
+
+If telemetry publication fails:
+
+```text
+Telemetry Failed
+
+↓
+
+Log Warning
+
+↓
+
+Continue Processing
+```
+
+Observability failures must never block user requests.
+
+---
+
+# Gateway Runtime Sequence
+
+```text
+Client
+
+↓
+
+Gateway Controller
+
+↓
+
+Validation
+
+↓
+
+Enrichment
+
+↓
+
+Correlation
+
+↓
+
+Policy Engine
+
+↓
+
+Router
+
+↓
+
+Downstream Forwarder
+
+↓
+
+Response Processor
+
+↓
+
+Telemetry
+
+↓
+
+Client
+```
+
+---
+
+# Gateway Decision Flow
+
+```text
+Receive Request
+
+↓
+
+Valid?
+
+↓
+
+Policies Passed?
+
+↓
+
+Route Selected?
+
+↓
+
+Forward Request
+
+↓
+
+Response Received?
+
+↓
+
+Return Response
+```
+
+Every decision point should produce structured telemetry and be independently testable.
+
+---
+
+# Deliverable for Part 2
+
+At the end of Part 2, the **agentic-ai-gateway** has a complete runtime processing pipeline featuring request validation, context enrichment, correlation propagation, configurable policy execution, routing strategies, retry and circuit breaker handling, streaming support, standardized error responses, and seamless integration with the observability platform. The gateway is now capable of governing AI traffic before it reaches downstream agent services.
+
+
+
+# agentic-ai-gateway
+
+# Part 3 — Implementation Architecture & Enterprise Design Patterns
+
+---
+
+# Design Philosophy
+
+The AI Gateway should be **fully modular**, **policy-driven**, and **extensible**.
+
+Applications should never know:
+
+* How routing decisions are made
+* Which policy implementations are used
+* Which downstream service is selected
+* How retries or circuit breakers work
+
+Applications simply send requests to the gateway.
+
+---
+
+# Clean Architecture
+
+```text
+Controller
+
+↓
+
+Gateway SDK
+
+↓
+
+Gateway Pipeline
+
+↓
+
+Interfaces
+
+↓
+
+Implementations
+
+↓
+
+Downstream Services
+```
+
+Dependencies always point inward.
+
+---
+
+# DTO Layer
+
+All communication between components must use **Pydantic v2 DTOs**.
+
+Never pass:
+
+* dict
+* Any
+* Raw JSON
+
+---
+
+## Request DTOs
+
+Create:
+
+```text
+GatewayRequest
+
+AgentRequest
+
+StreamingRequest
+
+RoutingRequest
+
+ValidationRequest
+```
+
+---
+
+## Response DTOs
+
+Create:
+
+```text
+GatewayResponse
+
+AgentResponse
+
+StreamingResponse
+
+ErrorResponse
+
+RoutingResponse
+```
+
+---
+
+## Context DTOs
+
+Create:
+
+```text
+GatewayContext
+
+RequestContext
+
+RoutingContext
+
+PolicyContext
+
+CorrelationContext
+```
+
+---
+
+## Policy DTOs
+
+Create:
+
+```text
+PolicyResult
+
+RateLimitResult
+
+TokenQuotaResult
+
+BudgetResult
+
+CircuitBreakerResult
+
+ValidationResult
+```
+
+---
+
+## Routing DTOs
+
+Create:
+
+```text
+RouteDefinition
+
+RouteSelection
+
+RoutingRule
+
+RoutingDecision
+```
+
+---
+
+# Interfaces
+
+Everything should depend on interfaces.
+
+---
+
+## Gateway Pipeline
+
+```python
+class GatewayPipeline(ABC):
+
+    async def execute(...)
+```
+
+---
+
+## Policy Interface
+
+```python
+class GatewayPolicy(ABC):
+
+    async def evaluate(...)
+```
+
+---
+
+## Router Interface
+
+```python
+class Router(ABC):
+
+    async def route(...)
+```
+
+---
+
+## Forwarder Interface
+
+```python
+class RequestForwarder(ABC):
+
+    async def forward(...)
+```
+
+---
+
+## Validator Interface
+
+```python
+class RequestValidator(ABC):
+
+    async def validate(...)
+```
+
+---
+
+## Response Processor
+
+```python
+class ResponseProcessor(ABC):
+
+    async def process(...)
+```
+
+---
+
+Every implementation depends only on these interfaces.
+
+---
+
+# Chain of Responsibility Pattern
+
+The gateway pipeline follows the **Chain of Responsibility** pattern.
+
+```text
+Request
+
+↓
+
+Validation
+
+↓
+
+Rate Limit
+
+↓
+
+Budget
+
+↓
+
+Allowed Model
+
+↓
+
+Streaming
+
+↓
+
+Routing
+
+↓
+
+Forward
+```
+
+Each handler decides whether processing should continue.
+
+---
+
+# Strategy Pattern
+
+Gateway behavior should be interchangeable.
+
+---
+
+## Routing Strategy
+
+```text
+RoutingStrategy
+```
+
+Implementations:
+
+```text
+StaticRoutingStrategy
+
+RuleBasedRoutingStrategy
+
+PriorityRoutingStrategy
+
+WeightedRoutingStrategy
+```
+
+---
+
+## Retry Strategy
+
+```text
+RetryStrategy
+```
+
+Implementations:
+
+```text
+FixedDelayRetry
+
+ExponentialBackoffRetry
+
+NoRetryStrategy
+```
+
+---
+
+## Circuit Breaker Strategy
+
+```text
+CircuitBreakerStrategy
+```
+
+Implementations:
+
+```text
+SimpleCircuitBreaker
+
+SlidingWindowCircuitBreaker
+```
+
+---
+
+## Load Balancing Strategy
+
+```text
+LoadBalancingStrategy
+```
+
+Implementations:
+
+```text
+RoundRobinStrategy
+
+LeastConnectionsStrategy
+
+WeightedStrategy
+```
+
+---
+
+## Response Strategy
+
+```text
+ResponseStrategy
+```
+
+Implementations:
+
+```text
+StreamingResponseStrategy
+
+StandardResponseStrategy
+```
+
+---
+
+# Factory Pattern
+
+Applications must never instantiate implementations directly.
+
+---
+
+## Policy Factory
+
+Returns:
+
+```text
+RateLimitPolicy
+
+TokenQuotaPolicy
+
+BudgetPolicy
+
+AllowedModelPolicy
+
+AllowedProviderPolicy
+
+StreamingPolicy
+```
+
+---
+
+## Router Factory
+
+Returns:
+
+```text
+StaticRouter
+
+RuleRouter
+
+PriorityRouter
+```
+
+---
+
+## Strategy Factory
+
+Returns:
+
+```text
+RoutingStrategy
+
+RetryStrategy
+
+CircuitBreakerStrategy
+
+LoadBalancingStrategy
+```
+
+---
+
+## Validator Factory
+
+Returns:
+
+```text
+RequestValidator
+```
+
+---
+
+# Dependency Injection
+
+Inject:
+
+* Validators
+* Policies
+* Routers
+* Strategies
+* Forwarders
+* Response Processors
+
+Never instantiate implementations inside services.
+
+Example:
+
+Bad
+
+```python
+StaticRouter()
+```
+
+Good
+
+```python
+router: Router
+```
+
+---
+
+# Gateway Middleware
+
+Support middleware for cross-cutting concerns.
+
+```text
+Correlation Middleware
+
+↓
+
+Logging Middleware
+
+↓
+
+Telemetry Middleware
+
+↓
+
+Gateway Pipeline
+```
+
+Future middleware:
+
+* Authentication
+* Authorization
+* Tenant Resolution
+
+---
+
+# Policy Layer
+
+Each policy has one responsibility.
+
+Examples:
+
+## RateLimitPolicy
+
+Checks request frequency.
+
+---
+
+## BudgetPolicy
+
+Checks estimated request cost.
+
+---
+
+## TokenQuotaPolicy
+
+Checks token availability.
+
+---
+
+## AllowedModelPolicy
+
+Verifies approved model usage.
+
+---
+
+## StreamingPolicy
+
+Validates streaming support.
+
+---
+
+## RequestSizePolicy
+
+Validates payload size.
+
+---
+
+# Routing Layer
+
+The routing layer determines where requests are sent.
+
+Responsibilities:
+
+* Resolve destination
+* Select strategy
+* Build forwarding request
+
+Routing should be configuration-driven.
+
+---
+
+# Forwarding Layer
+
+Responsibilities:
+
+* Serialize requests
+* Preserve headers
+* Forward correlation IDs
+* Handle retries
+* Handle timeouts
+
+Support:
+
+* Standard HTTP
+* Streaming HTTP
+* Future MCP transport
+
+---
+
+# Configuration
+
+Create:
+
+```text
+GatewayConfig
+```
+
+Split into sections.
+
+---
+
+## RoutingConfig
+
+Contains:
+
+* Default Route
+* Routing Strategy
+* Timeout
+
+---
+
+## PolicyConfig
+
+Contains:
+
+* Rate Limits
+* Token Quotas
+* Allowed Models
+* Allowed Providers
+
+---
+
+## RetryConfig
+
+Contains:
+
+* Max Retries
+* Retry Delay
+* Backoff Strategy
+
+---
+
+## CircuitBreakerConfig
+
+Contains:
+
+* Failure Threshold
+* Recovery Timeout
+
+---
+
+## Feature Flags
+
+Support:
+
+```text
+Routing Enabled
+
+Streaming Enabled
+
+Retry Enabled
+
+Circuit Breaker Enabled
+
+Telemetry Enabled
+
+Policy Engine Enabled
+```
+
+---
+
+# Error Handling
+
+Create dedicated exceptions.
+
+```text
+GatewayException
+
+ValidationException
+
+RoutingException
+
+PolicyException
+
+ForwardingException
+
+TimeoutException
+
+CircuitBreakerException
+```
+
+Every exception should include:
+
+* Error Code
+* HTTP Status
+* Retryable
+* Component
+
+---
+
+# Async Programming
+
+Everything should be asynchronous.
+
+Examples:
+
+* Validation
+* Policy Evaluation
+* Routing
+* Forwarding
+* Telemetry
+
+Avoid blocking operations.
+
+---
+
+# Parallel Execution
+
+Independent policies should execute concurrently.
+
+```text
+Request
+
+↓
+
+Rate Limit
+
+     ||
+
+Budget
+
+     ||
+
+Allowed Model
+
+     ||
+
+Provider
+
+↓
+
+Routing
+```
+
+Use `asyncio.gather()` where dependencies do not exist.
+
+---
+
+# Resilience
+
+The gateway should never become a bottleneck.
+
+If:
+
+```text
+Telemetry Service Fails
+```
+
+The gateway should:
+
+```text
+Log Warning
+
+↓
+
+Continue Processing
+```
+
+If:
+
+```text
+One Downstream Route Fails
+```
+
+The gateway should:
+
+```text
+Retry
+
+↓
+
+Fallback Route
+
+↓
+
+Return Response
+```
+
+---
+
+# Testing Strategy
+
+Every component should be mockable.
+
+Mock:
+
+* Policies
+* Routers
+* Validators
+* Forwarders
+* Response Processors
+* Telemetry Publisher
+
+Support isolated unit testing without external services.
+
+---
+
+# Deliverable for Part 3
+
+At the end of Part 3, **agentic-ai-gateway** has a complete implementation architecture with DTOs, interfaces, middleware, Chain of Responsibility, Strategy and Factory patterns, dependency injection, configurable routing and policy engines, resilient forwarding, and comprehensive error handling.
+
+---
+
+# agentic-ai-gateway
+
+# Part 4 — End-to-End Gateway Lifecycle, Standards & Deliverables
+
+---
+
+# End-to-End Gateway Lifecycle
+
+Every AI request entering the enterprise platform should pass through the complete gateway lifecycle.
+
+```text
+Client
+
+↓
+
+Gateway Controller
+
+↓
+
+Gateway Middleware
+
+↓
+
+Validation
+
+↓
+
+Request Enrichment
+
+↓
+
+Correlation
+
+↓
+
+Policy Engine
+
+↓
+
+Routing
+
+↓
+
+Request Forwarding
+
+↓
+
+Downstream AI Service
+
+↓
+
+Response Processing
+
+↓
+
+Telemetry
+
+↓
+
+Client
+```
+
+The gateway owns the request until the response is returned.
+
+---
+
+# Complete Enterprise Request Flow
+
+```text
+Client
+
+↓
+
+AI Gateway
+
+↓
+
+Guardrails
+
+↓
+
+Travel Agent Service
+
+↓
+
+Prompt Management
+
+↓
+
+Memory MCP
+
+↓
+
+Knowledge MCP
+
+↓
+
+Travel MCP
+
+↓
+
+Observability
+
+↓
+
+Client
+```
+
+The gateway remains transparent to downstream services.
+
+---
+
+# Gateway Runtime Sequence
+
+```text
+Client
+
+↓
+
+Gateway Controller
+
+↓
+
+Validation
+
+↓
+
+Correlation
+
+↓
+
+Policy Engine
+
+↓
+
+Router
+
+↓
+
+Forwarder
+
+↓
+
+Travel Agent Service
+
+↓
+
+Response Processor
+
+↓
+
+Telemetry
+
+↓
+
+HTTP Response
+```
+
+---
+
+# Detailed Request Timeline
+
+```text
+Request Received
+
+↓
+
+Request Validated
+
+↓
+
+Context Enriched
+
+↓
+
+Correlation Generated
+
+↓
+
+Policies Executed
+
+↓
+
+Route Selected
+
+↓
+
+Request Forwarded
+
+↓
+
+Response Received
+
+↓
+
+Response Normalized
+
+↓
+
+Telemetry Published
+
+↓
+
+Response Returned
+```
+
+Every stage generates telemetry events.
+
+---
+
+# Request Processing Sequence
+
+```text
+HTTP Request
+
+↓
+
+Controller
+
+↓
+
+Gateway Context
+
+↓
+
+Pipeline
+
+↓
+
+Policies
+
+↓
+
+Router
+
+↓
+
+Forwarder
+
+↓
+
+Travel Agent
+
+↓
+
+Gateway Response
+```
+
+---
+
+# Gateway Decision Flow
+
+```text
+Request Received
+
+↓
+
+Is Request Valid?
+
+↓
+
+Are Policies Passed?
+
+↓
+
+Is Route Available?
+
+↓
+
+Forward Request
+
+↓
+
+Response Received?
+
+↓
+
+Return Response
+```
+
+Each decision point should be observable and independently testable.
+
+---
+
+# Streaming Request Flow
+
+Support both streaming and standard responses.
+
+```text
+Streaming Request
+
+↓
+
+Gateway
+
+↓
+
+Streaming Forwarder
+
+↓
+
+Travel Agent
+
+↓
+
+Streaming Response
+
+↓
+
+Gateway
+
+↓
+
+Client
+```
+
+The gateway must not buffer the full response before forwarding.
+
+---
+
+# Retry Flow
+
+```text
+Request
+
+↓
+
+Downstream Failure
+
+↓
+
+Retry Strategy
+
+↓
+
+Success
+
+OR
+
+Fallback Route
+
+↓
+
+Failure Response
+```
+
+Retries should respect configured limits and backoff strategies.
+
+---
+
+# Circuit Breaker Flow
+
+```text
+Healthy
+
+↓
+
+Failure Threshold Reached
+
+↓
+
+Circuit Open
+
+↓
+
+Recovery Timeout
+
+↓
+
+Half Open
+
+↓
+
+Healthy
+```
+
+Requests should fail fast while the circuit is open.
+
+---
+
+# Fallback Routing
+
+Support graceful degradation.
+
+```text
+Primary Route
+
+↓
+
+Unavailable
+
+↓
+
+Fallback Route
+
+↓
+
+Response
+```
+
+Fallback routing should be configurable per downstream service.
+
+---
+
+# Correlation Propagation
+
+Every downstream request must receive:
+
+```text
+Request ID
+
+Trace ID
+
+Correlation ID
+
+Gateway Version
+
+Environment
+```
+
+These identifiers enable end-to-end tracing across the platform.
+
+---
+
+# Folder Responsibilities
+
+## controllers/
+
+Expose REST endpoints and delegate to the gateway pipeline.
+
+---
+
+## gateway/
+
+Core orchestration logic for request processing.
+
+---
+
+## pipeline/
+
+Coordinates the complete gateway lifecycle.
+
+---
+
+## policies/
+
+Contains all gateway policies.
+
+Examples:
+
+* Rate limiting
+* Budget enforcement
+* Token quota
+* Allowed models
+* Allowed providers
+* Streaming
+
+---
+
+## routing/
+
+Responsible for route resolution and routing strategies.
+
+---
+
+## validators/
+
+Validates requests before policy execution.
+
+---
+
+## integrations/
+
+Handles communication with downstream AI services and observability.
+
+---
+
+## middleware/
+
+Implements reusable cross-cutting concerns.
+
+---
+
+## dto/
+
+Contains all request, response, context, routing, and policy models.
+
+---
+
+## interfaces/
+
+Defines contracts for all pluggable components.
+
+---
+
+## factories/
+
+Creates policies, routers, strategies, and validators.
+
+---
+
+## strategies/
+
+Contains interchangeable routing, retry, circuit breaker, and response strategies.
+
+---
+
+## config/
+
+Strongly typed configuration objects.
+
+---
+
+## utils/
+
+Shared helper utilities.
+
+---
+
+# Coding Standards
+
+The repository should follow these principles:
+
+* Async-first implementation
+* Pydantic v2 DTOs
+* Constructor-based dependency injection
+* Interface-driven design
+* Single Responsibility Principle
+* No business logic in controllers
+* Configuration-driven behavior
+* Structured logging
+* Strong type hints throughout
+* Prefer composition over inheritance
+
+---
+
+# Performance Goals
+
+The gateway should be optimized for:
+
+* Low request latency
+* High throughput
+* Parallel policy execution
+* Efficient streaming
+* Connection reuse
+* Minimal serialization overhead
+* Configurable timeouts
+* Non-blocking request forwarding
+
+---
+
+# Security Guidelines
+
+The gateway should:
+
+* Validate all incoming requests
+* Sanitize headers before forwarding
+* Preserve correlation IDs
+* Never log secrets or credentials
+* Support configurable request masking
+* Reject malformed payloads early
+
+Authentication and authorization hooks should be designed for future integration without changing the core architecture.
+
+---
+
+# Extensibility
+
+Adding a new policy should require:
+
+1. Implement the `GatewayPolicy` interface.
+2. Register it in the `PolicyFactory`.
+3. Add configuration.
+4. Enable the feature flag.
+
+No pipeline changes should be required.
+
+Similarly, adding:
+
+* A new routing strategy
+* A new retry strategy
+* A new load-balancing strategy
+* A new downstream AI service
+
+should not require modifications to existing core components.
+
+---
+
+# Deliverables
+
+Generate a complete runnable repository including:
+
+* FastAPI application
+* Gateway pipeline
+* Request validation
+* Policy engine
+* Routing engine
+* Forwarding layer
+* Response processor
+* Streaming support
+* Retry and circuit breaker implementations
+* DTOs
+* Interfaces
+* Factories
+* Strategies
+* Middleware
+* Dependency injection
+* Configuration management
+* Observability integration
+* Comprehensive README
+* Sample requests and responses
+
+---
+
+# README Requirements
+
+The README should include:
+
+1. Project overview
+2. AI Gateway architecture
+3. End-to-end request lifecycle
+4. Folder structure
+5. Technology stack
+6. Request validation
+7. Policy engine
+8. Routing architecture
+9. Retry and circuit breaker
+10. Streaming support
+11. Configuration
+12. Integration with other platform repositories
+13. Adding a new policy
+14. Adding a new routing strategy
+15. Local execution instructions
+
+---
+
+# Future Enhancements
+
+The architecture should support future capabilities such as:
+
+* Multi-region routing
+* Intelligent model routing
+* Dynamic provider selection
+* AI workload scheduling
+* Traffic shaping
+* Canary releases
+* Blue-green deployments
+* Request prioritization
+* Multi-tenant routing
+* Policy-as-Code
+* Dynamic configuration updates
+
+---
+
+# Final Enterprise AI Gateway Architecture
+
+```text
+                   Client
+                      │
+                      ▼
+              Gateway Controller
+                      │
+                      ▼
+             Gateway Middleware
+                      │
+                      ▼
+              Validation Layer
+                      │
+                      ▼
+               Policy Engine
+                      │
+                      ▼
+              Routing Engine
+                      │
+                      ▼
+            Request Forwarder
+                      │
+                      ▼
+          Downstream AI Services
+                      │
+                      ▼
+           Response Processor
+                      │
+                      ▼
+               Observability
+                      │
+                      ▼
+                  HTTP Response
+```
+
+---
+
+# Final Objective
+
+The generated codebase should demonstrate how an **Enterprise AI Gateway** governs and routes AI traffic across an organization. It should provide a centralized, extensible layer for validation, policy enforcement, routing, resiliency, and observability while remaining independent of business logic and downstream AI implementations. The gateway should serve as the single entry point for all enterprise AI applications, enabling consistent governance, scalability, and operational excellence.
