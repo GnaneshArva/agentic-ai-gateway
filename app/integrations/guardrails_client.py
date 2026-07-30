@@ -13,7 +13,7 @@ class GuardrailsClient:
     def __init__(self, settings: Settings):
         self._settings = settings
         self._enabled = settings.feature_flags.enable_guardrails
-        self._endpoint = f"{settings.guardrails_service_url.rstrip('/')}/guardrails/input/validate"
+        self._endpoint = f"{settings.guardrails_service_url.rstrip('/')}/api/v1/guardrails/validate/input"
 
     async def validate_input(
         self, context: GatewayContext, request: GatewayRequest
@@ -22,8 +22,10 @@ class GuardrailsClient:
             return
 
         payload = {
-            "text": request.prompt or "",
-            "session_id": request.session_id or context.correlation.session_id,
+            "prompt": request.prompt or "",
+            "messages": [m.model_dump() for m in (request.messages or [])],
+            "user_id": request.user_id,
+            "session_id": request.session_id,
         }
 
         headers = {
@@ -35,19 +37,13 @@ class GuardrailsClient:
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
                 response = await client.post(self._endpoint, json=payload, headers=headers)
-                if response.status_code == 200:
+                if response.status_code == 400 or response.status_code == 422:
                     data = response.json()
-                    if not data.get("is_allowed", True):
-                        violations = data.get("metadata", {}).get("violations", [])
-                        msg = violations[0]["message"] if violations else "Blocked by security policy"
-                        raise PolicyException(
-                            message=f"Guardrail Policy Violation: {msg}",
-                            error_code="GUARDRAILS_INPUT_BLOCKED",
-                            status_code=400,
-                        )
-                    # Update request prompt with sanitized/masked text if returned
-                    if data.get("sanitized_text"):
-                        request.prompt = data["sanitized_text"]
+                    raise PolicyException(
+                        message=f"Guardrails input validation rejected request: {data.get('detail', 'Policy violation')}",
+                        error_code="GUARDRAILS_VIOLATION",
+                        status_code=400,
+                    )
         except PolicyException:
             raise
         except Exception as e:
