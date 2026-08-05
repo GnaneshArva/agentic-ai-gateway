@@ -2,6 +2,7 @@ import uuid
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.middleware.gzip import GZipMiddleware
 from app.config import get_settings
 from app.controllers import gateway_router, health_router
 from app.dto.response_dto import ErrorResponse
@@ -28,6 +29,7 @@ app = FastAPI(
 )
 
 # Add Middlewares
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(TelemetryMiddleware)
 app.add_middleware(LoggingMiddleware)
 app.add_middleware(CorrelationMiddleware)
