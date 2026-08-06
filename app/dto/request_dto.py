@@ -23,6 +23,8 @@ class GatewayRequest(BaseModel):
     model: Optional[str] = Field(default="gpt-4o", description="Target model name")
     
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
+    top_p: float = Field(default=0.9, ge=0.0, le=1.0, description="Nucleus sampling probability threshold")
+    top_k: int = Field(default=50, ge=1, le=100, description="Top-k token sampling cutoff")
     max_tokens: Optional[int] = Field(default=4096, ge=1, le=128000)
     stream: bool = Field(default=False, description="Whether to stream response tokens")
     
@@ -39,6 +41,8 @@ class AgentRequest(BaseModel):
     conversation_id: Optional[str] = None
     model: str = "gpt-4o"
     temperature: float = 0.7
+    top_p: float = 0.9
+    top_k: int = 50
     max_tokens: int = 4096
     metadata: Dict[str, Any] = Field(default_factory=dict)
 

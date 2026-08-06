@@ -23,7 +23,7 @@ class GuardrailsClient:
 
         payload = {
             "text": request.prompt or "",
-            "session_id": request.session_id or context.correlation.session_id,
+            "session_id": request.session_id or getattr(context.correlation, "session_id", "sess_default"),
         }
 
         headers = {

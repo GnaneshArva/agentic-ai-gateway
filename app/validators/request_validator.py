@@ -14,6 +14,12 @@ class RequestValidator(RequestValidatorInterface):
         if request.temperature < 0.0 or request.temperature > 2.0:
             errors.append(f"Temperature '{request.temperature}' must be between 0.0 and 2.0.")
 
+        if request.top_p < 0.0 or request.top_p > 1.0:
+            errors.append(f"top_p '{request.top_p}' must be between 0.0 and 1.0.")
+
+        if request.top_k < 1 or request.top_k > 100:
+            errors.append(f"top_k '{request.top_k}' must be between 1 and 100.")
+
         if request.max_tokens and request.max_tokens <= 0:
             errors.append(f"max_tokens '{request.max_tokens}' must be greater than 0.")
 

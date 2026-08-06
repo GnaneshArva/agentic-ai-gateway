@@ -59,8 +59,11 @@ class DownstreamForwarder(RequestForwarderInterface):
             "user_id": request.user_id,
             "session_id": request.session_id,
             "conversation_id": request.conversation_id,
+            "destination": request.metadata.get("destination") or "Paris, France",
             "model": request.model or "gpt-4o",
             "temperature": request.temperature,
+            "top_p": request.top_p,
+            "top_k": request.top_k,
             "max_tokens": request.max_tokens or 4096,
             "metadata": request.metadata,
         }
